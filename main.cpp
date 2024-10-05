@@ -38,20 +38,34 @@ int main()
     }
 
     std::vector<std::vector<int>> cgl_grid;
-    for (int i_row=0; i_row < rows; i_row++)
+    // +2 for row and cols to have a boundry of 0s
+    for (int i_row=0; i_row < rows+2; i_row++)
     {
         std::vector<int> cgl_grid_row;
-        for (int i_col=0; i_col < columns; i_col++)
+        for (int i_col=0; i_col < columns+2; i_col++)
         {
             int val = bw(rng);
-            std::cout << val;
+            // std::cout << val;
             cgl_grid_row.push_back(val);
         }
         cgl_grid.push_back(cgl_grid_row);
-        std::cout << std::endl;
+        // std::cout << std::endl;
     }
-    std::cout << "Grid rows: " << cgl_grid.size();
+    for (int i = 0; i < columns+2; i++) 
+    {
+        cgl_grid[0][i] = 0;
+        cgl_grid[rows+1][i] = 0;
+    }
+    for (int i = 0; i < rows+2; i++)
+    {
+        cgl_grid[i][0] = 0;
+        cgl_grid[i][columns+1] = 0;
+    }
+
+    // std::cout << "Grid rows: " << cgl_grid.size();
     // std::cout << "Grid cols: " << cgl_grid[0].size();
+    sf::Clock Clock;
+    Clock.restart();
 
 
     // run the program as long as the window is open
@@ -66,28 +80,65 @@ int main()
                 window.close();
         }
 
-        // clear the window with black color
-        window.clear(sf::Color::Black);
+        int Time = Clock.getElapsedTime().asMilliseconds();
+	    if (Time >= 300) {
+            Clock.restart();
 
-        // draw everything here...
-        
-        // for (int iCells = 0; iCells < cells.size(); iCells++)
-        // {
-        //     window.draw(cells[iCells]);
-        // }
-        for (int i_row=0; i_row < cgl_grid.size(); i_row++)
-        {
-            for (int i_col=0; i_col < cgl_grid[i_row].size(); i_col++)
+            // draw everything here...
+            
+            // for (int iCells = 0; iCells < cells.size(); iCells++)
+            // {
+            //     window.draw(cells[iCells]);
+            // }
+            for (int i_row=1; i_row < cgl_grid.size()-1; i_row++)
             {
-                //std::cout << cgl_grid[i_row][i_col];
-                if(cgl_grid[i_row][i_col])
+                for (int i_col=1; i_col < cgl_grid[i_row].size()-1; i_col++)
                 {
-                    window.draw(cells[i_row][i_col]);
-                    // std::cout << cgl_grid[i_row][i_col];
+                    int nearby_score = cgl_grid[i_row - 1][i_col - 1] + cgl_grid[i_row - 1][i_col] + cgl_grid[i_row - 1][i_col + 1] + cgl_grid[i_row][i_col - 1] \
+                            + cgl_grid[i_row][i_col + 1] + cgl_grid[i_row + 1][i_col - 1] + cgl_grid[i_row + 1][i_col + 1];
+
+                    // dead cell: check if birth possible
+                    if (cgl_grid[i_row][i_col] == 0)
+                    {
+                        if( nearby_score == 3)
+                            cgl_grid[i_row][i_col] = 1;
+                    }
+
+                    // alive cell: check death by isolation, death by overcrowding, or survival
+                    else 
+                    {
+                        // death by isolation
+                        if (nearby_score <= 1)
+                            cgl_grid[i_row][i_col] = 0;
+                        
+                        // death by overpopulation
+                        else if ( nearby_score >= 4)
+                            cgl_grid[i_row][i_col] = 0;
+                        
+                        else{
+                            // cell survives, so do nothing
+                        }
+                    }
+
+                    // if(cgl_grid[i_row][i_col])
+                    // {
+                    //     window.draw(cells[i_row-1][i_col-1]);
+                    //     // std::cout << cgl_grid[i_row][i_col];
+                    // }
                 }
             }
         }
 
+        // clear the window with black color
+        window.clear(sf::Color::Black);
+        for (int i_row = 1; i_row < cgl_grid.size()-1; i_row++)
+        {
+            for (int i_col = 1; i_col < cgl_grid[i_row].size()-1; i_col++)
+            {
+                if (cgl_grid[i_row][i_col])
+                    window.draw(cells[i_row-1][i_col-1]);
+            }
+        }
         // window.draw(sprite);
 
         // end the current frame

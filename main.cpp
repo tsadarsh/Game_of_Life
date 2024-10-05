@@ -2,9 +2,9 @@
 #include <iostream>
 #include <random>
 
-const int WINDOW_WIDTH = 1036;
-const int WINDOW_HEIGHT = 569;
-const int CELL_SIZE = 10;
+int WINDOW_WIDTH = 1036;
+int WINDOW_HEIGHT = 569;
+int CELL_SIZE = 10;
 std::default_random_engine rng;
 std::uniform_int_distribution<int> col_r(0, 255);
 std::uniform_int_distribution<int> col_g(0, 255);
@@ -12,8 +12,36 @@ std::uniform_int_distribution<int> col_b(0, 255);
 std::uniform_int_distribution<int> col_a(0, 255);
 std::uniform_int_distribution<int> bw(0, 1);
 
-int main()
+int main(int argc, char* argv[])
 {
+    for (int i=0; i< argc; i++)
+    {
+        std::string arg = argv[i];
+
+        if (arg == "-n")
+        {
+            // set threads
+        }
+        else if (arg == "-c")
+        {
+            if (i+1 < argc)
+                CELL_SIZE = std::stoi(argv[i+1]);
+        }
+        else if (arg == "-x")
+        {
+            if (i+1 < argc)
+                WINDOW_WIDTH = std::stoi(argv[i+1]);
+        }
+        else if (arg == "-y")
+        {
+            if (i+1 < argc)
+                WINDOW_HEIGHT = std::stoi(argv[i+1]);
+        }
+        else if (arg == "-t")
+        {
+            // process
+        }
+    }
     // create the window
     sf::Texture texture;
     if (!texture.loadFromFile("white.png", sf::IntRect(0, 0, CELL_SIZE, CELL_SIZE)))

@@ -11,6 +11,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Add source files
 file(GLOB SOURCES ${PROJECT_SOURCE_DIR}/main.cpp)
 
+#find OPENMP
+find_package(OpenMP)
+
 # Add the executable
 add_executable(Lab2 ${SOURCES})
 
@@ -20,4 +23,6 @@ link_directories(${PROJECT_SOURCE_DIR}/../SFML/lib)
 
 # Link the executable to the libraries in the lib directory
 target_link_libraries(Lab2 PUBLIC sfml-graphics sfml-system sfml-window)
-
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(Lab2 PUBLIC OpenMP::OpenMP_CXX)
+endif()

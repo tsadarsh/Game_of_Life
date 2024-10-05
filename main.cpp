@@ -1,16 +1,21 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <random>
+#include "sequentialLogic.cpp"
+#include "threadingLogic.cpp"
+#include "OMPLogic.cpp"
 
-int WINDOW_WIDTH = 1036;
-int WINDOW_HEIGHT = 569;
-int CELL_SIZE = 10;
+int WINDOW_WIDTH = 800;
+int WINDOW_HEIGHT = 600;
+int CELL_SIZE = 5;
+int PROCESS = 0; // 0 : SEQ; 1 : THRD; 2 : OMP
 std::default_random_engine rng;
 std::uniform_int_distribution<int> col_r(0, 255);
 std::uniform_int_distribution<int> col_g(0, 255);
 std::uniform_int_distribution<int> col_b(0, 255);
 std::uniform_int_distribution<int> col_a(0, 255);
 std::uniform_int_distribution<int> bw(0, 1);
+
 
 int main(int argc, char* argv[])
 {
@@ -39,7 +44,21 @@ int main(int argc, char* argv[])
         }
         else if (arg == "-t")
         {
-            // process
+            if (i+1 < argc)
+            {
+                if (std::string(argv[i+1]) == "THRD")
+                {
+                    PROCESS = 1;
+                }
+                else if (std::string(argv[i+1]) == "OMP")
+                {
+                    PROCESS = 2;
+                }
+                else
+                {
+                    PROCESS = 0; // SEQ
+                }
+            }
         }
     }
     // create the window
@@ -66,17 +85,21 @@ int main(int argc, char* argv[])
     }
 
     std::vector<std::vector<int>> cgl_grid;
+    std::vector<std::vector<int>> cgl_grid_next;
     // +2 for row and cols to have a boundry of 0s
     for (int i_row=0; i_row < rows+2; i_row++)
     {
         std::vector<int> cgl_grid_row;
+        std::vector<int> cgl_grid_row_next;
         for (int i_col=0; i_col < columns+2; i_col++)
         {
             int val = bw(rng);
             // std::cout << val;
             cgl_grid_row.push_back(val);
+            cgl_grid_row_next.push_back(0);
         }
         cgl_grid.push_back(cgl_grid_row);
+        cgl_grid_next.push_back(cgl_grid_row);
         // std::cout << std::endl;
     }
     for (int i = 0; i < columns+2; i++) 
@@ -109,61 +132,41 @@ int main(int argc, char* argv[])
         }
 
         int Time = Clock.getElapsedTime().asMilliseconds();
-	    if (Time >= 300) {
+	    if (Time >= 300) 
+        {
             Clock.restart();
 
-            // draw everything here...
-            
-            // for (int iCells = 0; iCells < cells.size(); iCells++)
-            // {
-            //     window.draw(cells[iCells]);
-            // }
-            for (int i_row=1; i_row < cgl_grid.size()-1; i_row++)
+            switch (PROCESS)
             {
-                for (int i_col=1; i_col < cgl_grid[i_row].size()-1; i_col++)
-                {
-                    int nearby_score = cgl_grid[i_row - 1][i_col - 1] + cgl_grid[i_row - 1][i_col] + cgl_grid[i_row - 1][i_col + 1] + cgl_grid[i_row][i_col - 1] \
-                            + cgl_grid[i_row][i_col + 1] + cgl_grid[i_row + 1][i_col - 1] + cgl_grid[i_row + 1][i_col + 1];
+            case 0:
+                SEQ_Process(&cgl_grid, &cgl_grid_next);
+                break;
+            
+            case 1:
+                // THRD Process
+                std::cout << "Starting threads!!";
+                THRD_Process(&cgl_grid, &cgl_grid_next);
+                break;
 
-                    // dead cell: check if birth possible
-                    if (cgl_grid[i_row][i_col] == 0)
-                    {
-                        if( nearby_score == 3)
-                            cgl_grid[i_row][i_col] = 1;
-                    }
-
-                    // alive cell: check death by isolation, death by overcrowding, or survival
-                    else 
-                    {
-                        // death by isolation
-                        if (nearby_score <= 1)
-                            cgl_grid[i_row][i_col] = 0;
-                        
-                        // death by overpopulation
-                        else if ( nearby_score >= 4)
-                            cgl_grid[i_row][i_col] = 0;
-                        
-                        else{
-                            // cell survives, so do nothing
-                        }
-                    }
-
-                    // if(cgl_grid[i_row][i_col])
-                    // {
-                    //     window.draw(cells[i_row-1][i_col-1]);
-                    //     // std::cout << cgl_grid[i_row][i_col];
-                    // }
-                }
+            case 2:
+                // OMP Process
+                OMP_Process(&cgl_grid, &cgl_grid_next);
+                break;
+            
+            default:
+                break;
             }
+
+            
         }
 
         // clear the window with black color
         window.clear(sf::Color::Black);
-        for (int i_row = 1; i_row < cgl_grid.size()-1; i_row++)
+        for (int i_row = 1; i_row < cgl_grid_next.size()-1; i_row++)
         {
-            for (int i_col = 1; i_col < cgl_grid[i_row].size()-1; i_col++)
+            for (int i_col = 1; i_col < cgl_grid_next[i_row].size()-1; i_col++)
             {
-                if (cgl_grid[i_row][i_col])
+                if (cgl_grid_next[i_row][i_col])
                     window.draw(cells[i_row-1][i_col-1]);
             }
         }

@@ -22,6 +22,9 @@ include_directories(${PROJECT_SOURCE_DIR}/../SFML/include)
 
 link_directories(${PROJECT_SOURCE_DIR}/../SFML/lib)
 
+file(COPY ${PROJECT_SOURCE_DIR}/white.png
+  DESTINATION "${COMMON_OUTPUT_DIR}/bin")
+
 # Link the executable to the libraries in the lib directory
 target_link_libraries(Lab2 PUBLIC sfml-graphics sfml-system sfml-window)
 if(OpenMP_CXX_FOUND)

@@ -8,7 +8,11 @@
 int WINDOW_WIDTH = 800;
 int WINDOW_HEIGHT = 600;
 int CELL_SIZE = 5;
-int PROCESS = 0; // 0 : SEQ; 1 : THRD; 2 : OMP
+int PROCESS = 1; // 0 : SEQ; 1 : THRD; 2 : OMP
+int NUMBER_OF_THREADS = 8;
+int ROWS, COLS;
+std::vector<std::vector<std::vector<int>>> quotas;
+
 std::default_random_engine rng;
 std::uniform_int_distribution<int> col_r(0, 255);
 std::uniform_int_distribution<int> col_g(0, 255);
@@ -17,15 +21,45 @@ std::uniform_int_distribution<int> col_a(0, 255);
 std::uniform_int_distribution<int> bw(0, 1);
 
 
+std::vector<std::vector<std::vector<int>>> createQuota(int num_of_threads, std::vector<std::vector<int>>* cgl_grid)
+{
+    std::vector<std::vector<std::vector<int>>> pp;
+    std::vector<std::vector<int>> p;
+
+    for (int iRow = 1; iRow < (*cgl_grid).size()-1; iRow++)
+    {
+        for (int iCol = 1; iCol < (*cgl_grid)[iRow].size(); iCol++)
+        {
+            if (p.size() < num_of_threads)
+            {
+                std::vector<int> rc;
+                rc.push_back(iRow);
+                rc.push_back(iCol);
+                p.push_back(std::move(rc));
+            }
+            else
+            {
+                pp.push_back(p);
+                p.resize(0);
+            }
+        }
+    }
+
+    return pp;
+}
+
 int main(int argc, char* argv[])
 {
+    std::cout << "Holaaaa!!!!" << std::endl;
+    rng.seed(time(NULL));
     for (int i=0; i< argc; i++)
     {
         std::string arg = argv[i];
 
         if (arg == "-n")
         {
-            // set threads
+            if (i+1 < argc)
+                NUMBER_OF_THREADS = std::stoi(argv[i+1]);
         }
         else if (arg == "-c")
         {
@@ -61,6 +95,8 @@ int main(int argc, char* argv[])
             }
         }
     }
+
+
     // create the window
     sf::Texture texture;
     if (!texture.loadFromFile("white.png", sf::IntRect(0, 0, CELL_SIZE, CELL_SIZE)))
@@ -68,13 +104,13 @@ int main(int argc, char* argv[])
         std::cout << "No texture found!";
     }
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "My window");
-    int columns = (WINDOW_WIDTH-CELL_SIZE) / CELL_SIZE;
-    int rows = (WINDOW_HEIGHT-CELL_SIZE) / CELL_SIZE;
+    COLS = (WINDOW_WIDTH-CELL_SIZE) / CELL_SIZE;
+    ROWS = (WINDOW_HEIGHT-CELL_SIZE) / CELL_SIZE;
     std::vector<std::vector<sf::Sprite>> cells;
-    for (int iRow=0; iRow < rows; iRow++)
+    for (int iRow=0; iRow < ROWS; iRow++)
     {
         std::vector<sf::Sprite> cells_row;
-        for (int iCol=0; iCol < columns; iCol++)
+        for (int iCol=0; iCol < COLS; iCol++)
         {
             sf::Sprite cell(texture);
             cell.setPosition(iCol*CELL_SIZE, iRow*CELL_SIZE);
@@ -87,11 +123,11 @@ int main(int argc, char* argv[])
     std::vector<std::vector<int>> cgl_grid;
     std::vector<std::vector<int>> cgl_grid_next;
     // +2 for row and cols to have a boundry of 0s
-    for (int i_row=0; i_row < rows+2; i_row++)
+    for (int i_row=0; i_row < ROWS+2; i_row++)
     {
         std::vector<int> cgl_grid_row;
         std::vector<int> cgl_grid_row_next;
-        for (int i_col=0; i_col < columns+2; i_col++)
+        for (int i_col=0; i_col < COLS+2; i_col++)
         {
             int val = bw(rng);
             // std::cout << val;
@@ -102,15 +138,21 @@ int main(int argc, char* argv[])
         cgl_grid_next.push_back(cgl_grid_row);
         // std::cout << std::endl;
     }
-    for (int i = 0; i < columns+2; i++) 
+    for (int i = 0; i < COLS+2; i++) 
     {
         cgl_grid[0][i] = 0;
-        cgl_grid[rows+1][i] = 0;
+        cgl_grid[ROWS+1][i] = 0;
     }
-    for (int i = 0; i < rows+2; i++)
+    for (int i = 0; i < ROWS+2; i++)
     {
         cgl_grid[i][0] = 0;
-        cgl_grid[i][columns+1] = 0;
+        cgl_grid[i][COLS+1] = 0;
+    }
+
+
+    if (PROCESS == 1)
+    {
+        quotas = createQuota(NUMBER_OF_THREADS, &cgl_grid);
     }
 
     // std::cout << "Grid rows: " << cgl_grid.size();
@@ -119,6 +161,8 @@ int main(int argc, char* argv[])
     Clock.restart();
 
 
+    int generation_counter = 0;
+    int Time = 0;
     // run the program as long as the window is open
     while (window.isOpen())
     {
@@ -129,36 +173,48 @@ int main(int argc, char* argv[])
             // "close requested" event: we close the window
             if (event.type == sf::Event::Closed)
                 window.close();
-        }
-
-        int Time = Clock.getElapsedTime().asMilliseconds();
-	    if (Time >= 300) 
-        {
-            Clock.restart();
-
-            switch (PROCESS)
+            
+            if (event.type == sf::Event::KeyPressed)
             {
-            case 0:
-                SEQ_Process(&cgl_grid, &cgl_grid_next);
-                break;
-            
-            case 1:
-                // THRD Process
-                std::cout << "Starting threads!!";
-                THRD_Process(&cgl_grid, &cgl_grid_next);
-                break;
-
-            case 2:
-                // OMP Process
-                OMP_Process(&cgl_grid, &cgl_grid_next);
-                break;
-            
-            default:
-                break;
+                if (event.key.code == sf::Keyboard::Escape)
+                {
+                    std::cout << "ESCAPE key pressed" << std::endl;
+                    window.close();
+                    return 0;
+                }
             }
-
-            
         }
+
+        if(generation_counter == 100)
+        {
+            generation_counter = 0;
+            std::cout << "Time taken for last 100 generations: " << Time << " microseconds" << std::endl;
+            Time = 0;
+        }
+
+        Clock.restart();
+        switch (PROCESS)
+        {
+        case 0:
+            SEQ_Process(&cgl_grid, &cgl_grid_next);
+            break;
+        
+        case 1:
+            // THRD Process
+            // std::cout << "Starting threads!!";
+            THRD_Process(&cgl_grid, &cgl_grid_next, NUMBER_OF_THREADS, &quotas);
+            break;
+
+        case 2:
+            // OMP Process
+            OMP_Process(&cgl_grid, &cgl_grid_next, NUMBER_OF_THREADS);
+            break;
+        
+        default:
+            break;
+        }
+        Time += Clock.getElapsedTime().asMicroseconds();
+        generation_counter++;
 
         // clear the window with black color
         window.clear(sf::Color::Black);

@@ -1,8 +1,9 @@
-void OMP_Process(std::vector<std::vector<int>>* curr_gen, std::vector<std::vector<int>>* next_gen)
+void OMP_Process(std::vector<std::vector<int>>* curr_gen, std::vector<std::vector<int>>* next_gen, int num_of_threads)
 {
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(num_of_threads / 2)
         for (int i_row=1; i_row < (*curr_gen).size()-1; i_row++)
         {
+        #pragma omp parallel for num_threads(num_of_threads / 2)
             for (int i_col=1; i_col < (*curr_gen)[i_row].size()-1; i_col++)
             {
                 int nearby_score = (*curr_gen)[i_row - 1][i_col - 1] + (*curr_gen)[i_row - 1][i_col] + (*curr_gen)[i_row - 1][i_col + 1] + (*curr_gen)[i_row][i_col - 1] \
@@ -33,10 +34,11 @@ void OMP_Process(std::vector<std::vector<int>>* curr_gen, std::vector<std::vecto
                 }
             }
         }
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(num_of_threads / 2)
         // copy next gen to curr generation
         for(int i_row = 0; i_row < (*next_gen).size(); i_row++)
         {
+        #pragma omp parallel for num_threads(num_of_threads / 2)
             for(int i_col = 0; i_col < (*next_gen)[i_row].size(); i_col++)
             {
                 (*curr_gen)[i_row][i_col] = (*next_gen)[i_row][i_col];

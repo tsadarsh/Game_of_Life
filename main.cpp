@@ -11,6 +11,7 @@ int CELL_SIZE = 5;
 int PROCESS = 1; // 0 : SEQ; 1 : THRD; 2 : OMP
 int NUMBER_OF_THREADS = 8;
 int ROWS, COLS;
+std::vector<std::vector<std::vector<int>>> pp;
 std::vector<std::vector<std::vector<int>>> quotas;
 
 std::default_random_engine rng;
@@ -21,9 +22,8 @@ std::uniform_int_distribution<int> col_a(0, 255);
 std::uniform_int_distribution<int> bw(0, 1);
 
 
-std::vector<std::vector<std::vector<int>>> createQuota(int num_of_threads, std::vector<std::vector<int>>* cgl_grid)
+void createQuota(int num_of_threads, std::vector<std::vector<int>>* cgl_grid)
 {
-    std::vector<std::vector<std::vector<int>>> pp;
     std::vector<std::vector<int>> p;
 
     for (int iRow = 1; iRow < (*cgl_grid).size()-1; iRow++)
@@ -39,13 +39,15 @@ std::vector<std::vector<std::vector<int>>> createQuota(int num_of_threads, std::
             }
             else
             {
-                pp.push_back(p);
+                std::vector<int> rc;
+                rc.push_back(iRow);
+                rc.push_back(iCol);
+                pp.push_back(std::move(p));
                 p.resize(0);
+                p.push_back(std::move(rc));
             }
         }
     }
-
-    return pp;
 }
 
 int main(int argc, char* argv[])
@@ -152,7 +154,7 @@ int main(int argc, char* argv[])
 
     if (PROCESS == 1)
     {
-        quotas = createQuota(NUMBER_OF_THREADS, &cgl_grid);
+        createQuota(NUMBER_OF_THREADS, &cgl_grid);
     }
 
     // std::cout << "Grid rows: " << cgl_grid.size();
@@ -202,7 +204,7 @@ int main(int argc, char* argv[])
         case 1:
             // THRD Process
             // std::cout << "Starting threads!!";
-            THRD_Process(&cgl_grid, &cgl_grid_next, NUMBER_OF_THREADS, &quotas);
+            THRD_Process(&cgl_grid, &cgl_grid_next, NUMBER_OF_THREADS, &pp);
             break;
 
         case 2:

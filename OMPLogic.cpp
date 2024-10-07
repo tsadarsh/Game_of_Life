@@ -36,10 +36,10 @@ void OMP_Process(std::vector<std::vector<int>>* curr_gen, std::vector<std::vecto
         }
     #pragma omp parallel for num_threads(num_of_threads / 2)
         // copy next gen to curr generation
-        for(int i_row = 0; i_row < (*next_gen).size(); i_row++)
+        for(int i_row = 1; i_row < (*next_gen).size()-1; i_row++)
         {
         #pragma omp parallel for num_threads(num_of_threads / 2)
-            for(int i_col = 0; i_col < (*next_gen)[i_row].size(); i_col++)
+            for(int i_col = 1; i_col < (*next_gen)[i_row].size()-1; i_col++)
             {
                 (*curr_gen)[i_row][i_col] = (*next_gen)[i_row][i_col];
             }

@@ -1,4 +1,22 @@
-#include <iostream>
+/*
+Author: Adarsh Thirugnanasambandam Sriuma
+Class: ECE6122 (A)
+Last Date Modified: Oct 7, 2024
+
+Description:
+
+Process file for Sequential Logic implementation.
+*/
+
+#include <vector>
+
+/**
+ * SEQ_Process - Processes next generation cell values from current genration status
+ *
+ * @curr_gen: Pointer to current generation cells container
+ * 
+ * @next_gen: Pointer to next generation cells container
+ */
 
 void SEQ_Process(std::vector<std::vector<int>>* curr_gen, std::vector<std::vector<int>>* next_gen)
 {

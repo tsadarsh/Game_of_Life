@@ -1,3 +1,25 @@
+/*
+Author: Adarsh Thirugnanasambandam Sriuma
+Class: ECE6122 (A)
+Last Date Modified: Oct 7, 2024
+
+Description:
+
+Process file for OMP Logic implementation.
+*/
+
+#include <vector>
+
+/**
+ * OMP_Process - Calls OMP process on sequential logic
+ *
+ * @curr_gen: Pointer to current generation cells container
+ * 
+ * @next_gen: Pointer to next generation cells container
+ * 
+ * @num_of_threads: Number of OMP threads to spawn
+ */
+
 void OMP_Process(std::vector<std::vector<int>>* curr_gen, std::vector<std::vector<int>>* next_gen, int num_of_threads)
 {
     #pragma omp parallel for num_threads(num_of_threads / 2)

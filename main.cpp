@@ -1,3 +1,15 @@
+/*
+Author: Adarsh Thirugnanasambandam Sriuma
+Class: ECE6122 (A)
+Last Date Modified: Oct 7, 2024
+
+Description:
+
+Program starting point. This file process user inputs
+manages SFML windows and calls processes depending
+on the input parameters.
+*/
+
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <random>
@@ -21,6 +33,14 @@ struct Report
     int threadCount;
     std::string processName;
 };
+
+/**
+ * createQuota - Batches current generations grid and stores the indices in `quotas` vector
+ *
+ * @num_of_threads: Number of threads that was requested to be spawned
+ * 
+ * @cgl_grid: Grid that holds the current generation status
+ */
 
 void createQuota(int num_of_threads, std::vector<std::vector<int>>* cgl_grid)
 {

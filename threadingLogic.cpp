@@ -1,6 +1,25 @@
+/*
+Author: Adarsh Thirugnanasambandam Sriuma
+Class: ECE6122 (A)
+Last Date Modified: Oct 7, 2024
+
+Description:
+
+Process file for std::thread(s) Logic implementation.
+*/
+
 #include <thread>
 #include <vector>
-#include <iostream>
+
+/**
+ * populateNextGen - Calls OMP process on sequential logic
+ *
+ * @curr_gen: Pointer to current generation cells container
+ * 
+ * @next_gen: Pointer to next generation cells container
+ * 
+ * @job: Current generation cell indexes that is allocated to the thread invoking this function.
+ */
 
 void populateNextGen(std::vector<std::vector<int>>* curr_gen, std::vector<std::vector<int>>* next_gen, std::vector<std::vector<int>> job)
 {
@@ -38,6 +57,16 @@ void populateNextGen(std::vector<std::vector<int>>* curr_gen, std::vector<std::v
     }
 }
 
+/**
+ * updateCurrGen - Updates the next generation cells container
+ *
+ * @curr_gen: Pointer to current generation cells container
+ * 
+ * @next_gen: Pointer to next generation cells container
+ * 
+ * @job: Current generation cell indexes that is allocated to the thread invoking this function.
+ */
+
 void updateCurrGen(std::vector<std::vector<int>>* curr_gen, std::vector<std::vector<int>>* next_gen, std::vector<std::vector<int>> job)
 {
     for (int iJob = 0; iJob < job.size(); iJob++)
@@ -48,6 +77,16 @@ void updateCurrGen(std::vector<std::vector<int>>* curr_gen, std::vector<std::vec
         (*curr_gen)[i_row][i_col] = (*next_gen)[i_row][i_col];
     }
 }
+
+/**
+ * THRD_Process - Starting point to THRD process. Creates requested number of threads and updates next generation.
+ *
+ * @curr_gen: Pointer to current generation cells container
+ * 
+ * @next_gen: Pointer to next generation cells container
+ * 
+ * @num_of_threads: Number of OMP threads to spawn
+ */
 
 void THRD_Process(std::vector<std::vector<int>>* curr_gen, std::vector<std::vector<int>>* next_gen, int num_of_threads, std::vector<std::vector<std::vector<int>>>* quotas)
 {

@@ -25,12 +25,14 @@ std::uniform_int_distribution<int> bw(0, 1);
 void createQuota(int num_of_threads, std::vector<std::vector<int>>* cgl_grid)
 {
     std::vector<std::vector<int>> p;
+    int batchSize = (ROWS * COLS) / NUMBER_OF_THREADS;
+    std::cout << "Batch size: " << batchSize << std::endl;
 
     for (int iRow = 1; iRow < (*cgl_grid).size()-1; iRow++)
     {
-        for (int iCol = 1; iCol < (*cgl_grid)[iRow].size(); iCol++)
+        for (int iCol = 1; iCol < (*cgl_grid)[0].size()-1; iCol++)
         {
-            if (p.size() < num_of_threads)
+            if (p.size() < batchSize)
             {
                 std::vector<int> rc;
                 rc.push_back(iRow);
@@ -47,6 +49,16 @@ void createQuota(int num_of_threads, std::vector<std::vector<int>>* cgl_grid)
                 p.push_back(std::move(rc));
             }
         }
+    }
+    if (p.size() > 0)
+    {
+        pp.push_back(std::move(p));
+    }
+
+    std::cout << "This will spawn " << pp.size() << std::endl;
+    for(int i=0; i<pp.size(); i++)
+    {
+        std::cout << "Size of " << i << " is " << pp[i].size() << std::endl;
     }
 }
 
@@ -108,6 +120,7 @@ int main(int argc, char* argv[])
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "My window");
     COLS = (WINDOW_WIDTH-CELL_SIZE) / CELL_SIZE;
     ROWS = (WINDOW_HEIGHT-CELL_SIZE) / CELL_SIZE;
+    std::cout << "ROWS: " << ROWS << " COLS: " << COLS << std::endl;
     std::vector<std::vector<sf::Sprite>> cells;
     for (int iRow=0; iRow < ROWS; iRow++)
     {

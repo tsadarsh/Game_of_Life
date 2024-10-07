@@ -55,7 +55,6 @@ void THRD_Process(std::vector<std::vector<int>>* curr_gen, std::vector<std::vect
 
     for (int iThread = 0; iThread < (*quotas).size(); iThread++)
     {
-        // std::vector<std::vector<int>>> q = &((*quotas)[iThread]);
         thread_pool_1.push_back(std::thread(populateNextGen, std::ref(curr_gen), std::ref(next_gen), (*quotas)[iThread]));
     }
     
@@ -65,7 +64,6 @@ void THRD_Process(std::vector<std::vector<int>>* curr_gen, std::vector<std::vect
             thread_pool_1[iThread].join();
     }
 
-    // thread_pool.resize(0);
     std::vector<std::thread> thread_pool_2;
     for (int iThread = 0; iThread < (*quotas).size(); iThread++)
     {

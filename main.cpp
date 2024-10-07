@@ -11,60 +11,48 @@ int CELL_SIZE = 5;
 int PROCESS = 1; // 0 : SEQ; 1 : THRD; 2 : OMP
 int NUMBER_OF_THREADS = 8;
 int ROWS, COLS;
-std::vector<std::vector<std::vector<int>>> pp;
-std::vector<std::vector<std::vector<int>>> quotas;
 
+std::vector<std::vector<std::vector<int>>> quotas;
 std::default_random_engine rng;
-std::uniform_int_distribution<int> col_r(0, 255);
-std::uniform_int_distribution<int> col_g(0, 255);
-std::uniform_int_distribution<int> col_b(0, 255);
-std::uniform_int_distribution<int> col_a(0, 255);
 std::uniform_int_distribution<int> bw(0, 1);
 
+struct Report
+{
+    int threadCount;
+    std::string processName;
+};
 
 void createQuota(int num_of_threads, std::vector<std::vector<int>>* cgl_grid)
 {
-    std::vector<std::vector<int>> p;
+    std::vector<std::vector<int>> threadQuota;
     int batchSize = (ROWS * COLS) / NUMBER_OF_THREADS;
-    std::cout << "Batch size: " << batchSize << std::endl;
 
     for (int iRow = 1; iRow < (*cgl_grid).size()-1; iRow++)
     {
         for (int iCol = 1; iCol < (*cgl_grid)[0].size()-1; iCol++)
         {
-            if (p.size() < batchSize)
+            std::vector<int> rowColIdx;
+
+            rowColIdx.push_back(iRow);
+            rowColIdx.push_back(iCol);
+
+            if (threadQuota.size() == batchSize)
             {
-                std::vector<int> rc;
-                rc.push_back(iRow);
-                rc.push_back(iCol);
-                p.push_back(std::move(rc));
+                quotas.push_back(std::move(threadQuota));
+                threadQuota.resize(0);
             }
-            else
-            {
-                std::vector<int> rc;
-                rc.push_back(iRow);
-                rc.push_back(iCol);
-                pp.push_back(std::move(p));
-                p.resize(0);
-                p.push_back(std::move(rc));
-            }
+
+            threadQuota.push_back(std::move(rowColIdx));
         }
     }
-    if (p.size() > 0)
+    if (threadQuota.size() > 0)
     {
-        pp.push_back(std::move(p));
-    }
-
-    std::cout << "This will spawn " << pp.size() << std::endl;
-    for(int i=0; i<pp.size(); i++)
-    {
-        std::cout << "Size of " << i << " is " << pp[i].size() << std::endl;
+        quotas.push_back(std::move(threadQuota));
     }
 }
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Holaaaa!!!!" << std::endl;
     rng.seed(time(NULL));
     for (int i=0; i< argc; i++)
     {
@@ -110,6 +98,28 @@ int main(int argc, char* argv[])
         }
     }
 
+    // Report 
+    Report performance;
+    switch (PROCESS)
+    {
+    case 0:
+        performance.threadCount = 1;
+        performance.processName = " sequential thread ";
+        break;
+    
+    case 1:
+        performance.threadCount = NUMBER_OF_THREADS;
+        performance.processName = " std::threads ";
+        break;
+    
+    case 2:
+        performance.threadCount = NUMBER_OF_THREADS;
+        performance.processName = " OMP threads ";
+        break;
+    
+    default:
+        break;
+    }
 
     // create the window
     sf::Texture texture;
@@ -118,9 +128,10 @@ int main(int argc, char* argv[])
         std::cout << "No texture found!";
     }
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "My window");
+    
     COLS = (WINDOW_WIDTH-CELL_SIZE) / CELL_SIZE;
     ROWS = (WINDOW_HEIGHT-CELL_SIZE) / CELL_SIZE;
-    std::cout << "ROWS: " << ROWS << " COLS: " << COLS << std::endl;
+
     std::vector<std::vector<sf::Sprite>> cells;
     for (int iRow=0; iRow < ROWS; iRow++)
     {
@@ -129,7 +140,6 @@ int main(int argc, char* argv[])
         {
             sf::Sprite cell(texture);
             cell.setPosition(iCol*CELL_SIZE, iRow*CELL_SIZE);
-            // cell.setColor(sf::Color(col_r(rng), col_g(rng), col_b(rng), col_a(rng)));
             cells_row.push_back(cell);
         }
         cells.push_back(cells_row);
@@ -170,11 +180,8 @@ int main(int argc, char* argv[])
         createQuota(NUMBER_OF_THREADS, &cgl_grid);
     }
 
-    // std::cout << "Grid rows: " << cgl_grid.size();
-    // std::cout << "Grid cols: " << cgl_grid[0].size();
     sf::Clock Clock;
     Clock.restart();
-
 
     int generation_counter = 0;
     int Time = 0;
@@ -203,7 +210,8 @@ int main(int argc, char* argv[])
         if(generation_counter == 100)
         {
             generation_counter = 0;
-            std::cout << "Time taken for last 100 generations: " << Time << " microseconds" << std::endl;
+            std::cout << "100 generations took " << Time << " microseconds " \
+                << "with "<< performance.threadCount << performance.processName << std::endl;
             Time = 0;
         }
 
@@ -216,8 +224,7 @@ int main(int argc, char* argv[])
         
         case 1:
             // THRD Process
-            // std::cout << "Starting threads!!";
-            THRD_Process(&cgl_grid, &cgl_grid_next, NUMBER_OF_THREADS, &pp);
+            THRD_Process(&cgl_grid, &cgl_grid_next, NUMBER_OF_THREADS, &quotas);
             break;
 
         case 2:
@@ -241,7 +248,6 @@ int main(int argc, char* argv[])
                     window.draw(cells[i_row-1][i_col-1]);
             }
         }
-        // window.draw(sprite);
 
         // end the current frame
         window.display();
